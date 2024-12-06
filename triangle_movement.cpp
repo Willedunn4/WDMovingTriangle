@@ -1,10 +1,12 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
 #include <iostream>
+#include <cstdlib> // For std::rand() and std::srand()
+#include <ctime>   // For seeding random numbers
 
 int main() {
     // Create a window
-    sf::RenderWindow window(sf::VideoMode(800, 600), "Triangle Movement");
+    sf::RenderWindow window(sf::VideoMode(800, 600), "Triangle Movement with Wall Collision");
     window.setFramerateLimit(60);
 
     // Define a triangle shape
@@ -15,12 +17,25 @@ int main() {
     triangle.setPoint(2, sf::Vector2f(100, 0));
     triangle.setFillColor(sf::Color::Green);
 
-    // Position the triangle
+    // Initialize random seed
+    std::srand(static_cast<unsigned>(std::time(nullptr)));
+
+    // Function to generate a random color
+    auto getRandomColor = []() {
+        return sf::Color(std::rand() % 256, std::rand() % 256, std::rand() % 256);
+    };
+
+    // Position and physics variables
     float x = 350.0f;
     float y = 400.0f;
     float gravity = 0.8f;
     float velocityY = 0.0f;
     bool isJumping = false;
+    const float speed = 5.0f;
+
+    // Window dimensions
+    const float windowWidth = 800.0f;
+    const float windowHeight = 600.0f;
 
     // Main loop
     while (window.isOpen()) {
@@ -33,16 +48,16 @@ int main() {
 
         // Movement controls
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)) {
-            x -= 5.0f; // Move left
+            x -= speed; // Move left
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)) {
-            x += 5.0f; // Move right
+            x += speed; // Move right
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)) {
-            y -= 5.0f; // Move up
+            y -= speed; // Move up
         }
         if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)) {
-            y += 5.0f; // Move down
+            y += speed; // Move down
         }
 
         // Jump logic
@@ -55,11 +70,30 @@ int main() {
         velocityY += gravity;
         y += velocityY;
 
-        // Ground collision
-        if (y >= 400.0f) { // Ground level
-            y = 400.0f;
-            velocityY = 0.0f;
+        // Wall collision detection and color change
+        bool hitWall = false;
+
+        if (x < 0.0f) { // Left wall
+            x = 0.0f;
+            hitWall = true;
+        }
+        if (x + 100.0f > windowWidth) { // Right wall
+            x = windowWidth - 100.0f;
+            hitWall = true;
+        }
+        if (y < 0.0f) { // Top wall
+            y = 0.0f;
+            hitWall = true;
+        }
+        if (y + 100.0f > windowHeight) { // Bottom wall
+            y = windowHeight - 100.0f;
+            velocityY = 0.0f; // Reset vertical velocity
             isJumping = false;
+            hitWall = true;
+        }
+
+        if (hitWall) {
+            triangle.setFillColor(getRandomColor());
         }
 
         // Update triangle position
